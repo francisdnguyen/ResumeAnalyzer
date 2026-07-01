@@ -1,0 +1,26 @@
+/* Tailwind v4 — single import replaces @tailwind base/components/utilities */
+@import "tailwindcss";
+
+/* Class-based dark mode: <html class="dark"> triggers dark: variants */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Theme tokens — font family maps to font-sans utility */
+@theme {
+  --font-family-sans: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Subtle custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(35% 0 0);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(42% 0 0);
+}
