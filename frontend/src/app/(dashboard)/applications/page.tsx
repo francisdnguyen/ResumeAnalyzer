@@ -71,7 +71,13 @@ function CardContent({ app }: { app: ApplicationResponse }) {
 
 // ─── Draggable card ───────────────────────────────────────────────────────────
 
-function DraggableCard({ app }: { app: ApplicationResponse }) {
+function DraggableCard({
+  app,
+  onDelete,
+}: {
+  app: ApplicationResponse;
+  onDelete: (id: string) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: app.id,
   });
@@ -82,13 +88,22 @@ function DraggableCard({ app }: { app: ApplicationResponse }) {
       style={{ transform: CSS.Translate.toString(transform) }}
       className={cn(
         "bg-gray-800 border border-gray-700 rounded-lg p-3 select-none",
-        "transition-shadow touch-none",
+        "transition-shadow touch-none relative group",
         isDragging ? "opacity-0" : "hover:border-gray-600 cursor-grab"
       )}
       {...attributes}
       {...listeners}
     >
       <CardContent app={app} />
+      {/* Delete button — stopPropagation prevents drag activation */}
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onDelete(app.id); }}
+        className="absolute top-2 right-2 p-1 rounded text-gray-600 hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all"
+        aria-label="Delete application"
+      >
+        <XIcon className="w-3 h-3" />
+      </button>
     </div>
   );
 }
@@ -98,9 +113,11 @@ function DraggableCard({ app }: { app: ApplicationResponse }) {
 function DroppableColumn({
   col,
   cards,
+  onDelete,
 }: {
   col: (typeof COLUMNS)[number];
   cards: ApplicationResponse[];
+  onDelete: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: col.id });
 
@@ -126,7 +143,7 @@ function DroppableColumn({
         )}
       >
         {cards.map((app) => (
-          <DraggableCard key={app.id} app={app} />
+          <DraggableCard key={app.id} app={app} onDelete={onDelete} />
         ))}
         {cards.length === 0 && (
           <div className="flex items-center justify-center h-20">
@@ -350,6 +367,26 @@ export default function ApplicationsPage() {
     setShowModal(false);
   }, []);
 
+  const handleDelete = useCallback(
+    async (id: string) => {
+      setApplications((prev) => prev.filter((a) => a.id !== id));
+      try {
+        const token = await getToken();
+        if (!token) throw new Error("Not authenticated.");
+        await api.applications.delete(id, token);
+      } catch {
+        setError("Failed to delete application.");
+        // Refetch to restore correct state
+        const token = await getToken();
+        if (token) {
+          const apps = await api.applications.list(token).catch(() => null);
+          if (apps) setApplications(apps);
+        }
+      }
+    },
+    [getToken]
+  );
+
   const grouped = COLUMNS.reduce<Record<ApplicationStatus, ApplicationResponse[]>>(
     (acc, col) => {
       acc[col.id] = applications.filter((a) => a.status === col.id);
@@ -400,7 +437,7 @@ export default function ApplicationsPage() {
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => setActiveApp(null)}>
         <div className="flex gap-4 items-start min-w-[900px]">
           {COLUMNS.map((col) => (
-            <DroppableColumn key={col.id} col={col} cards={grouped[col.id]} />
+            <DroppableColumn key={col.id} col={col} cards={grouped[col.id]} onDelete={handleDelete} />
           ))}
         </div>
 

@@ -35,6 +35,8 @@ app.add_middleware(
         "http://localhost:3000",
         "https://resume-analyzer-two-eta.vercel.app",
     ],
+    # Matches all Vercel preview deploy URLs for this project
+    allow_origin_regex=r"https://resume-analyzer-[a-z0-9\-]+\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

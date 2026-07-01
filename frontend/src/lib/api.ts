@@ -86,6 +86,14 @@ export const api = {
         token,
       });
     },
+
+    delete(id: string, token: string): Promise<void> {
+      return request<void>(`/api/v1/jobs/${id}`, {
+        method: "DELETE",
+        token,
+        noBody: true,
+      });
+    },
   },
 
   match: {
@@ -126,6 +134,14 @@ export const api = {
         token,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+      });
+    },
+
+    delete(id: string, token: string): Promise<void> {
+      return request<void>(`/api/v1/applications/${id}`, {
+        method: "DELETE",
+        token,
+        noBody: true,
       });
     },
   },

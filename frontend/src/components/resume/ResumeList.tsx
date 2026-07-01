@@ -3,6 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { Trash2Icon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ResumeListItem } from "@/types";
@@ -30,6 +31,7 @@ export function ResumeList({
   showUploadLink = false,
 }: ResumeListProps) {
   const { getToken } = useAuth();
+  const router = useRouter();
   const [resumes, setResumes] = useState<ResumeListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export function ResumeList({
       if (!token) throw new Error("Not authenticated.");
       await api.resumes.delete(id, token);
       setResumes((prev) => prev.filter((r) => r.id !== id));
+      router.refresh();
     } catch {
       setError("Failed to delete resume. Please try again.");
     } finally {

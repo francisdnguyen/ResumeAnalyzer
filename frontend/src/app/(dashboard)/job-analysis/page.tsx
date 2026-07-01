@@ -6,6 +6,8 @@ import {
   BrainCircuitIcon,
   CheckCircle2Icon,
   ChevronDownIcon,
+  ChevronUpIcon,
+  Trash2Icon,
   XCircleIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -118,17 +120,24 @@ export default function JobAnalysisPage() {
   const [questionsStatus, setQuestionsStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [questionsError, setQuestionsError] = useState<string | null>(null);
 
-  // Load resumes on mount for the dropdown
+  const [pastJobs, setPastJobs] = useState<JobAnalysisResponse[]>([]);
+  const [showPastJobs, setShowPastJobs] = useState(false);
+
+  // Load resumes and past jobs on mount
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const token = await getToken();
         if (!token) return;
-        const list = await api.resumes.list(token);
+        const [list, jobs] = await Promise.all([
+          api.resumes.list(token),
+          api.jobs.list(token),
+        ]);
         if (!cancelled) {
           setResumes(list);
           if (list.length > 0) setSelectedResumeId(list[0].id);
+          setPastJobs(jobs);
           setStatus("idle");
         }
       } catch {
@@ -155,6 +164,7 @@ export default function JobAnalysisPage() {
       // Step 1: Submit the job description → extract skills + embedding
       const analyzedJob = await api.jobs.create({ description: description.trim() }, token);
       setJob(analyzedJob);
+      setPastJobs((prev) => [analyzedJob, ...prev.filter((j) => j.id !== analyzedJob.id)]);
 
       // Step 2: Run the match against the selected resume
       const matchResult = await api.match.analyze(
@@ -186,6 +196,32 @@ export default function JobAnalysisPage() {
     setQuestionsStatus("idle");
     setQuestionsError(null);
   };
+
+  const loadPastJob = (pastJob: JobAnalysisResponse) => {
+    reset();
+    setJob(pastJob);
+    setDescription(pastJob.description);
+    setStatus("success");
+    setShowPastJobs(false);
+  };
+
+  const handleDeleteJob = useCallback(async (id: string) => {
+    setPastJobs((prev) => prev.filter((j) => j.id !== id));
+    if (job?.id === id) reset();
+    try {
+      const token = await getToken();
+      if (!token) return;
+      await api.jobs.delete(id, token);
+    } catch {
+      // Refetch to restore state on failure
+      const token = await getToken();
+      if (token) {
+        const jobs = await api.jobs.list(token).catch(() => null);
+        if (jobs) setPastJobs(jobs);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [job, getToken]);
 
   const handleRewriteBullet = useCallback(async () => {
     if (!job || !bulletInput.trim()) return;
@@ -253,6 +289,61 @@ export default function JobAnalysisPage() {
           Paste a job description and see how well your resume matches.
         </p>
       </div>
+
+      {/* Past analyses */}
+      {pastJobs.length > 0 && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl mb-6">
+          <button
+            onClick={() => setShowPastJobs((v) => !v)}
+            className="w-full flex items-center justify-between px-6 py-4 text-left"
+          >
+            <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+              Past Analyses ({pastJobs.length})
+            </span>
+            {showPastJobs ? (
+              <ChevronUpIcon className="w-4 h-4 text-gray-500" />
+            ) : (
+              <ChevronDownIcon className="w-4 h-4 text-gray-500" />
+            )}
+          </button>
+
+          {showPastJobs && (
+            <ul className="divide-y divide-gray-800 border-t border-gray-800">
+              {pastJobs.map((j) => (
+                <li
+                  key={j.id}
+                  className="flex items-center justify-between px-6 py-3 gap-4 group"
+                >
+                  <button
+                    onClick={() => loadPastJob(j)}
+                    className="flex-1 text-left min-w-0"
+                  >
+                    <p className="text-sm text-white truncate hover:text-blue-400 transition-colors">
+                      {j.title && j.company
+                        ? `${j.title} · ${j.company}`
+                        : j.title ?? j.company ?? "Untitled Job"}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      {new Date(j.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteJob(j.id)}
+                    className="p-1.5 rounded-md text-gray-700 hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                    aria-label="Delete job"
+                  >
+                    <Trash2Icon className="w-3.5 h-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Input card */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
@@ -380,115 +471,93 @@ export default function JobAnalysisPage() {
       </div>
 
       {/* Results */}
-      {status === "success" && match && job && (
+      {status === "success" && job && (
         <div className="space-y-5">
-          {/* Overall score card */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
-                  Match Score
-                </p>
-                {(job.title || job.company) && (
-                  <p className="text-sm text-gray-400 mt-0.5">
-                    {[job.title, job.company].filter(Boolean).join(" · ")}
-                  </p>
+          {match && (
+            <>
+              {/* Overall score card */}
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">
+                      Match Score
+                    </p>
+                    {(job.title || job.company) && (
+                      <p className="text-sm text-gray-400 mt-0.5">
+                        {[job.title, job.company].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className={cn("text-5xl font-bold tabular-nums", scoreColor(match.overall_score))}>
+                      {match.overall_score}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-0.5">out of 100</p>
+                  </div>
+                </div>
+
+                {/* Breakdown bars */}
+                <div className="space-y-3.5">
+                  <ScoreBar label="Technical Skills" value={match.breakdown.technical_skills} weight="40%" />
+                  <ScoreBar label="Experience Alignment" value={match.breakdown.experience_alignment} weight="25%" />
+                  <ScoreBar label="Keywords" value={match.breakdown.keywords} weight="15%" />
+                  <ScoreBar label="Preferred Skills" value={match.breakdown.preferred_skills} weight="10%" />
+                  <ScoreBar label="Education" value={match.breakdown.education} weight="10%" />
+                </div>
+
+                {match.semantic_similarity !== null && (
+                  <div className="mt-5 pt-5 border-t border-gray-800">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gray-500">Semantic similarity</p>
+                      <span className="text-xs font-medium text-gray-400 tabular-nums">
+                        {match.semantic_similarity}%
+                      </span>
+                    </div>
+                  </div>
                 )}
               </div>
-              <div className="text-right">
-                <p className={cn("text-5xl font-bold tabular-nums", scoreColor(match.overall_score))}>
-                  {match.overall_score}
-                </p>
-                <p className="text-xs text-gray-600 mt-0.5">out of 100</p>
-              </div>
-            </div>
 
-            {/* Breakdown bars */}
-            <div className="space-y-3.5">
-              <ScoreBar
-                label="Technical Skills"
-                value={match.breakdown.technical_skills}
-                weight="40%"
-              />
-              <ScoreBar
-                label="Experience Alignment"
-                value={match.breakdown.experience_alignment}
-                weight="25%"
-              />
-              <ScoreBar
-                label="Keywords"
-                value={match.breakdown.keywords}
-                weight="15%"
-              />
-              <ScoreBar
-                label="Preferred Skills"
-                value={match.breakdown.preferred_skills}
-                weight="10%"
-              />
-              <ScoreBar
-                label="Education"
-                value={match.breakdown.education}
-                weight="10%"
-              />
-            </div>
+              {/* Missing skills */}
+              {match.missing_skills.length > 0 && (
+                <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-3">
+                    Missing Skills
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {match.missing_skills.map((s) => (
+                      <SkillChip key={s} skill={s} variant="missing" />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-            {/* Semantic similarity pill */}
-            {match.semantic_similarity !== null && (
-              <div className="mt-5 pt-5 border-t border-gray-800">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-gray-500">Semantic similarity</p>
-                  <span className="text-xs font-medium text-gray-400 tabular-nums">
-                    {match.semantic_similarity}%
-                  </span>
+              {/* Strengths & gaps */}
+              <div className="grid grid-cols-2 gap-5">
+                <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-3">Strengths</p>
+                  <ul className="space-y-2.5">
+                    {match.strengths.map((s) => (
+                      <li key={s} className="flex items-start gap-2">
+                        <CheckCircle2Icon className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
+                        <span className="text-sm text-gray-300">{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-3">Gaps</p>
+                  <ul className="space-y-2.5">
+                    {match.gaps.map((g) => (
+                      <li key={g} className="flex items-start gap-2">
+                        <XCircleIcon className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                        <span className="text-sm text-gray-300">{g}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Missing skills */}
-          {match.missing_skills.length > 0 && (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-3">
-                Missing Skills
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {match.missing_skills.map((s) => (
-                  <SkillChip key={s} skill={s} variant="missing" />
-                ))}
-              </div>
-            </div>
+            </>
           )}
-
-          {/* Strengths & gaps */}
-          <div className="grid grid-cols-2 gap-5">
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-3">
-                Strengths
-              </p>
-              <ul className="space-y-2.5">
-                {match.strengths.map((s) => (
-                  <li key={s} className="flex items-start gap-2">
-                    <CheckCircle2Icon className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
-                    <span className="text-sm text-gray-300">{s}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-3">
-                Gaps
-              </p>
-              <ul className="space-y-2.5">
-                {match.gaps.map((g) => (
-                  <li key={g} className="flex items-start gap-2">
-                    <XCircleIcon className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                    <span className="text-sm text-gray-300">{g}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
 
           {/* Extracted job details */}
           {(job.required_skills.length > 0 || job.preferred_skills.length > 0) && (
