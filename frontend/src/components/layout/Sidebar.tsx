@@ -57,7 +57,7 @@ export function Sidebar() {
 
       {/* User */}
       <div className="p-4 border-t border-gray-800">
-        <UserButton afterSignOutUrl="/" />
+        <UserButton />
       </div>
     </aside>
   );
