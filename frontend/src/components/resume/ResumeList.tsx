@@ -2,6 +2,7 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { Trash2Icon } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ResumeListItem } from "@/types";
@@ -14,7 +15,20 @@ function formatDate(iso: string): string {
   });
 }
 
-export function ResumeList({ refreshKey }: { refreshKey?: number }) {
+interface ResumeListProps {
+  refreshKey?: number;
+  /** Cap the number of rows shown. Displays a "View all" link when the total exceeds this. */
+  limit?: number;
+  title?: string;
+  showUploadLink?: boolean;
+}
+
+export function ResumeList({
+  refreshKey,
+  limit,
+  title = "Your Resumes",
+  showUploadLink = false,
+}: ResumeListProps) {
   const { getToken } = useAuth();
   const [resumes, setResumes] = useState<ResumeListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +76,10 @@ export function ResumeList({ refreshKey }: { refreshKey?: number }) {
           <div className="h-4 w-32 bg-gray-800 rounded" />
         </div>
         {[0, 1, 2].map((i) => (
-          <div key={i} className="flex items-center justify-between px-6 py-4 border-b border-gray-800 last:border-0">
+          <div
+            key={i}
+            className="flex items-center justify-between px-6 py-4 border-b border-gray-800 last:border-0"
+          >
             <div className="flex items-center gap-3">
               <div className="h-5 w-10 bg-gray-800 rounded" />
               <div className="h-4 w-48 bg-gray-800/70 rounded" />
@@ -74,14 +91,49 @@ export function ResumeList({ refreshKey }: { refreshKey?: number }) {
     );
   }
 
+  const visible = limit ? resumes.slice(0, limit) : resumes;
+  const hasMore = limit !== undefined && resumes.length > limit;
+
   if (resumes.length === 0) {
-    return null;
+    return (
+      <div className="bg-gray-900 border border-gray-800 rounded-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+          <h2 className="text-sm font-semibold text-white">{title}</h2>
+          {showUploadLink && (
+            <Link
+              href="/upload"
+              className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium"
+            >
+              + Upload new
+            </Link>
+          )}
+        </div>
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <p className="text-sm text-gray-500">No resumes uploaded yet.</p>
+          <Link
+            href="/upload"
+            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg border border-gray-700 transition-colors"
+          >
+            Upload your first resume →
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl">
-      <div className="px-6 py-4 border-b border-gray-800">
-        <h2 className="text-sm font-semibold text-white">Your Resumes</h2>
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+        <h2 className="text-sm font-semibold text-white">{title}</h2>
+        {showUploadLink && (
+          <Link
+            href="/upload"
+            className="text-xs text-blue-400 hover:text-blue-300 transition-colors font-medium"
+          >
+            + Upload new
+          </Link>
+        )}
       </div>
 
       {error && (
@@ -90,10 +142,13 @@ export function ResumeList({ refreshKey }: { refreshKey?: number }) {
         </div>
       )}
 
+      {/* Rows */}
       <ul className="divide-y divide-gray-800">
-        {resumes.map((resume) => (
-          <li key={resume.id} className="flex items-center justify-between px-6 py-4 gap-4">
-            {/* File info */}
+        {visible.map((resume) => (
+          <li
+            key={resume.id}
+            className="flex items-center justify-between px-6 py-4 gap-4"
+          >
             <div className="flex items-center gap-3 min-w-0">
               <span className="shrink-0 text-xs font-medium px-2 py-0.5 rounded bg-gray-800 text-gray-400 border border-gray-700 uppercase">
                 {resume.file_type}
@@ -101,7 +156,6 @@ export function ResumeList({ refreshKey }: { refreshKey?: number }) {
               <span className="text-sm text-white truncate">{resume.filename}</span>
             </div>
 
-            {/* Date + actions */}
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-xs text-gray-600">{formatDate(resume.created_at)}</span>
 
@@ -135,6 +189,18 @@ export function ResumeList({ refreshKey }: { refreshKey?: number }) {
           </li>
         ))}
       </ul>
+
+      {/* View all footer */}
+      {hasMore && (
+        <div className="px-6 py-3 border-t border-gray-800">
+          <Link
+            href="/upload"
+            className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
+          >
+            View all {resumes.length} resumes →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
