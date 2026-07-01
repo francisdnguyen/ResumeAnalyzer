@@ -20,9 +20,9 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 async function request<T>(
   path: string,
-  init: RequestInit & { token: string }
+  init: RequestInit & { token: string; noBody?: boolean }
 ): Promise<T> {
-  const { token, headers, ...rest } = init;
+  const { token, headers, noBody, ...rest } = init;
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...rest,
@@ -37,27 +37,8 @@ async function request<T>(
     throw new Error((body as ApiError).detail ?? "Request failed.");
   }
 
+  if (noBody) return undefined as T;
   return response.json() as Promise<T>;
-}
-
-async function requestVoid(
-  path: string,
-  init: RequestInit & { token: string }
-): Promise<void> {
-  const { token, headers, ...rest } = init;
-
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...rest,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...headers,
-    },
-  });
-
-  if (!response.ok) {
-    const body = await response.json().catch((): ApiError => ({ detail: "Request failed." }));
-    throw new Error((body as ApiError).detail ?? "Request failed.");
-  }
 }
 
 export const api = {
@@ -81,9 +62,10 @@ export const api = {
     },
 
     delete(id: string, token: string): Promise<void> {
-      return requestVoid(`/api/v1/resumes/${id}`, {
+      return request<void>(`/api/v1/resumes/${id}`, {
         method: "DELETE",
         token,
+        noBody: true,
       });
     },
   },

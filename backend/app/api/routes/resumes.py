@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,7 +67,7 @@ async def list_resumes(
 
 @router.delete("/{resume_id}", status_code=204)
 async def delete_resume(
-    resume_id: str,
+    resume_id: UUID,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> None:

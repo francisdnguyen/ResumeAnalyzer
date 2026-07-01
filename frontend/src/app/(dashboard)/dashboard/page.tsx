@@ -1,10 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { ResumeList } from "@/components/resume/ResumeList";
 
-interface JobItem {
-  id: string;
-}
-
 async function fetchDashboardData(token: string) {
   const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
   const headers = { Authorization: `Bearer ${token}` };
@@ -22,7 +18,7 @@ async function fetchDashboardData(token: string) {
 
   const jobCount: number =
     jobsRes.status === "fulfilled" && jobsRes.value.ok
-      ? ((await jobsRes.value.json()) as JobItem[]).length
+      ? ((await jobsRes.value.json()) as unknown[]).length
       : 0;
 
   const appCount: number =
