@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -61,3 +61,19 @@ async def list_resumes(
         .order_by(Resume.created_at.desc())
     )
     return list(result.scalars().all())
+
+
+@router.delete("/{resume_id}", status_code=204)
+async def delete_resume(
+    resume_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    result = await db.execute(
+        select(Resume).where(Resume.id == resume_id, Resume.user_id == user_id)
+    )
+    resume = result.scalar_one_or_none()
+    if resume is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
+    await db.delete(resume)
+    await db.commit()

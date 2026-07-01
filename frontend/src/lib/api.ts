@@ -40,6 +40,26 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
+async function requestVoid(
+  path: string,
+  init: RequestInit & { token: string }
+): Promise<void> {
+  const { token, headers, ...rest } = init;
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...rest,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...headers,
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch((): ApiError => ({ detail: "Request failed." }));
+    throw new Error((body as ApiError).detail ?? "Request failed.");
+  }
+}
+
 export const api = {
   resumes: {
     upload(file: File, token: string): Promise<ResumeUploadResponse> {
@@ -56,6 +76,13 @@ export const api = {
     list(token: string): Promise<ResumeListItem[]> {
       return request<ResumeListItem[]>("/api/v1/resumes/", {
         method: "GET",
+        token,
+      });
+    },
+
+    delete(id: string, token: string): Promise<void> {
+      return requestVoid(`/api/v1/resumes/${id}`, {
+        method: "DELETE",
         token,
       });
     },

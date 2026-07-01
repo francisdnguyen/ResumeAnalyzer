@@ -15,7 +15,7 @@ const MAX_BYTES = 10 * 1024 * 1024;
 
 type Status = "idle" | "uploading" | "success" | "error";
 
-export function ResumeUpload() {
+export function ResumeUpload({ onUploadSuccess }: { onUploadSuccess?: () => void }) {
   const { getToken } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -64,6 +64,7 @@ export function ResumeUpload() {
       const data = await api.resumes.upload(selectedFile, token);
       setResult(data);
       setStatus("success");
+      onUploadSuccess?.();
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Upload failed. Please try again.");
       setStatus("error");
