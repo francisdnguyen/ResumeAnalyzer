@@ -24,13 +24,15 @@
 - [x] 6-agent quality review pass — 8 bugs fixed post-review
 
 ## Week 4 — Ship
-- [ ] CORS: add Vercel production domain to `allow_origins` in `backend/main.py`
-- [ ] Backend deploy to Railway — configure env vars + health check
-- [ ] Frontend deploy to Vercel — configure env vars, point `NEXT_PUBLIC_API_URL` to Railway
-- [ ] Verify Neon migrations 001 + 002 applied to production DB
+- [x] CORS: add Vercel production domain to `allow_origins` in `backend/main.py`
+- [x] Backend deploy to Railway — https://resumeanalyzer-production-de80.up.railway.app
+- [x] Frontend deploy to Vercel — https://resume-analyzer-two-eta.vercel.app
+- [x] Verify Neon migrations 001 + 002 applied to production DB
 - [x] Rate limiting on AI-heavy endpoints (`/match`, `/bullets`, `/questions`)
 - [x] Next.js `error.tsx` + `loading.tsx` for dashboard route group
-- [ ] README — architecture diagram, local dev setup, deploy guide
+- [x] Resume delete — DELETE /api/v1/resumes/{id} + ResumeList on dashboard + upload page
+- [x] Settings dark theme — Clerk variables API applied to UserProfile
+- [x] README — architecture diagram, local dev setup, deploy guide
 
 ---
 

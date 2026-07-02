@@ -181,7 +181,7 @@ export default function JobAnalysisPage() {
     }
   }, [selectedResumeId, description, getToken]);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setDescription("");
     setJob(null);
     setMatch(null);
@@ -195,7 +195,7 @@ export default function JobAnalysisPage() {
     setQuestions(null);
     setQuestionsStatus("idle");
     setQuestionsError(null);
-  };
+  }, []);
 
   const loadPastJob = (pastJob: JobAnalysisResponse) => {
     reset();
@@ -206,6 +206,7 @@ export default function JobAnalysisPage() {
   };
 
   const handleDeleteJob = useCallback(async (id: string) => {
+    const removed = pastJobs.find((j) => j.id === id);
     setPastJobs((prev) => prev.filter((j) => j.id !== id));
     if (job?.id === id) reset();
     try {
@@ -213,15 +214,10 @@ export default function JobAnalysisPage() {
       if (!token) return;
       await api.jobs.delete(id, token);
     } catch {
-      // Refetch to restore state on failure
-      const token = await getToken();
-      if (token) {
-        const jobs = await api.jobs.list(token).catch(() => null);
-        if (jobs) setPastJobs(jobs);
-      }
+      if (removed) setPastJobs((prev) => [removed, ...prev]);
+      setErrorMessage("Failed to delete job. Please try again.");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [job, getToken]);
+  }, [pastJobs, job, getToken, reset]);
 
   const handleRewriteBullet = useCallback(async () => {
     if (!job || !bulletInput.trim()) return;

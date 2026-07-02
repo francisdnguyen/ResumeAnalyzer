@@ -81,6 +81,7 @@ function DraggableCard({
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: app.id,
   });
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <div
@@ -95,15 +96,35 @@ function DraggableCard({
       {...listeners}
     >
       <CardContent app={app} />
-      {/* Delete button — stopPropagation prevents drag activation */}
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); onDelete(app.id); }}
-        className="absolute top-2 right-2 p-1 rounded text-gray-600 hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all"
-        aria-label="Delete application"
-      >
-        <XIcon className="w-3 h-3" />
-      </button>
+
+      {confirming ? (
+        <div
+          className="absolute top-2 right-2 flex items-center gap-1"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(app.id); }}
+            className="text-xs px-1.5 py-0.5 bg-red-600 hover:bg-red-500 text-white rounded transition-colors font-medium"
+          >
+            Yes
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setConfirming(false); }}
+            className="text-xs px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+          >
+            No
+          </button>
+        </div>
+      ) : (
+        <button
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); setConfirming(true); }}
+          className="absolute top-2 right-2 p-1 rounded text-gray-600 hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all"
+          aria-label="Delete application"
+        >
+          <XIcon className="w-3 h-3" />
+        </button>
+      )}
     </div>
   );
 }
@@ -369,22 +390,18 @@ export default function ApplicationsPage() {
 
   const handleDelete = useCallback(
     async (id: string) => {
+      const removed = applications.find((a) => a.id === id);
       setApplications((prev) => prev.filter((a) => a.id !== id));
       try {
         const token = await getToken();
         if (!token) throw new Error("Not authenticated.");
         await api.applications.delete(id, token);
       } catch {
+        if (removed) setApplications((prev) => [removed, ...prev]);
         setError("Failed to delete application.");
-        // Refetch to restore correct state
-        const token = await getToken();
-        if (token) {
-          const apps = await api.applications.list(token).catch(() => null);
-          if (apps) setApplications(apps);
-        }
       }
     },
-    [getToken]
+    [applications, getToken]
   );
 
   const grouped = COLUMNS.reduce<Record<ApplicationStatus, ApplicationResponse[]>>(

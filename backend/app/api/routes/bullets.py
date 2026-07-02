@@ -1,9 +1,13 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.api.deps import get_current_user_id
 from app.core.limiter import limiter
 from app.schemas.bullets import BulletRewriteRequest, BulletRewriteResponse
 from app.services.ai import rewrite_bullet
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/bullets", tags=["bullets"])
 
@@ -29,6 +33,7 @@ async def rewrite_bullet_endpoint(
     try:
         rewrites = await rewrite_bullet(body.bullet.strip(), body.job_description)
     except Exception as exc:
+        logger.warning("bullet rewrite failed", extra={"user_id": _user_id}, exc_info=exc)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"AI service error: {exc}",

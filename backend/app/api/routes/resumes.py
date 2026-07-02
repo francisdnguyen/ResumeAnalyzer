@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -10,6 +11,8 @@ from app.models.resume import Resume, User
 from app.schemas.resume import ResumeListItem, ResumeUploadResponse
 from app.services.ai import generate_embedding
 from app.services.resume_parser import parse_resume
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/resumes", tags=["resumes"])
 
@@ -41,6 +44,16 @@ async def upload_resume(
     db.add(resume)
     await db.commit()
     await db.refresh(resume)
+
+    logger.info(
+        "resume uploaded",
+        extra={
+            "user_id": user_id,
+            "resume_id": str(resume.id),
+            "file_type": file_type,
+            "embedding_ready": embedding is not None,
+        },
+    )
 
     return ResumeUploadResponse(
         id=resume.id,
@@ -79,3 +92,4 @@ async def delete_resume(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume not found.")
     await db.delete(resume)
     await db.commit()
+    logger.info("resume deleted", extra={"user_id": user_id, "resume_id": str(resume_id)})

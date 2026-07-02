@@ -75,7 +75,7 @@
 - JWT verified via **Clerk JWKS** — RS256 only; JWKS cached 1 hour in-process
 - Filenames **sanitized** (strip non-alphanumeric except `._-`) before storage
 - **Raw bytes never persisted** — only extracted text reaches the database
-- CORS: `allow_origins=["http://localhost:3000"]` — **must update to Vercel domain before Week 4 deploy**
+- CORS: `allow_origins` includes localhost + Vercel production domain; `allow_origin_regex` covers all `resume-analyzer-*.vercel.app` preview URLs
 - Applications: `application_id` + `job_id` both validated against `user_id` before any read/write
 - Pydantic `Literal` type on `ApplicationStatus` — invalid status values rejected at deserialization, before route logic runs
 - Bullet rewriter and questions: authenticated but stateless — no user data persisted
@@ -91,10 +91,12 @@
 | GET | `/api/v1/resumes/` | Bearer JWT | List user's resumes |
 | POST | `/api/v1/jobs/` | Bearer JWT | Submit JD → extract skills + embedding → store |
 | GET | `/api/v1/jobs/` | Bearer JWT | List user's analyzed jobs |
+| DELETE | `/api/v1/jobs/{id}` | Bearer JWT | Delete job (ownership validated) |
 | POST | `/api/v1/match/` | Bearer JWT | Cosine sim + GPT weighted match analysis |
 | GET | `/api/v1/applications/` | Bearer JWT | List user's applications (batch-joined to jobs) |
 | POST | `/api/v1/applications/` | Bearer JWT | Create application (job_id required, ownership validated) |
 | PATCH | `/api/v1/applications/{id}` | Bearer JWT | Update status or notes; stamps updated_at explicitly |
+| DELETE | `/api/v1/applications/{id}` | Bearer JWT | Delete application (ownership validated) |
 | POST | `/api/v1/bullets/` | Bearer JWT | Rewrite resume bullet — GPT-4.1, 3 variants |
 | POST | `/api/v1/questions/` | Bearer JWT | Generate interview questions — GPT-4.1-mini, 3 categories |
 
@@ -133,7 +135,11 @@ All features shipped. Post-review fixes applied after 6-agent quality pass:
 - [x] Next.js `loading.tsx` skeleton — `(dashboard)/loading.tsx`
 - [x] Rate limiting on AI endpoints — slowapi 0.1.9; 10/min match+questions, 20/min bullets; keyed by Bearer token
 - [x] Neon production DB verified — pgvector active, all 4 tables + extracted_skills column present
-- [ ] Update CORS `allow_origins` in `backend/main.py` to include Vercel production domain
-- [ ] Backend deploy to Railway — set env vars: `DATABASE_URL`, `CLERK_SECRET_KEY`, `OPENAI_API_KEY`, `CLERK_JWKS_URL`
-- [ ] Frontend deploy to Vercel — set env vars: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_API_URL` (→ Railway URL)
-- [ ] README with architecture diagram, local dev instructions, and deploy guide
+- [x] CORS updated — Vercel production domain added to `allow_origins`
+- [x] Backend live on Railway — https://resumeanalyzer-production-de80.up.railway.app
+- [x] Frontend live on Vercel — https://resume-analyzer-two-eta.vercel.app
+- [x] Resume delete — DELETE /api/v1/resumes/{id}, ownership validated, ResumeList shared across dashboard + upload page
+- [x] Settings dark theme — Clerk UserProfile using variables API for full dark palette
+- [x] README with architecture diagram, local dev instructions, and deploy guide
+- [x] Structured JSON logging — `app/core/logging.py`; request-ID middleware on every request, warning-level logs on AI-service failures (previously silent)
+- [x] Automated backend tests — pytest suite in `backend/tests/` (31 tests: resume parsing, JWT auth verification, cosine similarity, route-level dependency-override tests); `requirements-dev.txt` + `pyproject.toml` pytest config

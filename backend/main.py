@@ -8,7 +8,11 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.api.routes import applications, bullets, jobs, match, questions, resumes
+from app.core.config import settings
 from app.core.limiter import limiter
+from app.core.logging import RequestContextMiddleware, configure_logging
+
+configure_logging(settings.log_level)
 
 
 @asynccontextmanager
@@ -29,14 +33,16 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
+app.add_middleware(RequestContextMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "https://resume-analyzer-two-eta.vercel.app",
     ],
-    # Matches all Vercel preview deploy URLs for this project
-    allow_origin_regex=r"https://resume-analyzer-[a-z0-9\-]+\.vercel\.app",
+    # Matches all Vercel preview deploy URLs for this project (anchored, case-insensitive)
+    allow_origin_regex=r"(?i)^https://resume-analyzer-[a-z0-9-]+\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     openai_api_key: str
 
     max_upload_size_bytes: int = 10 * 1024 * 1024  # 10 MB
+    log_level: str = "INFO"
 
     @property
     def async_database_url(self) -> str:

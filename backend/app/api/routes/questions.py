@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +11,8 @@ from app.models.job import Job
 from app.models.resume import Resume
 from app.schemas.questions import InterviewQuestionsRequest, InterviewQuestionsResponse
 from app.services.ai import generate_interview_questions
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/questions", tags=["questions"])
 
@@ -43,6 +47,11 @@ async def generate_questions(
             job_title=job.title,
         )
     except Exception as exc:
+        logger.warning(
+            "interview question generation failed",
+            extra={"user_id": user_id, "resume_id": str(body.resume_id), "job_id": str(body.job_id)},
+            exc_info=exc,
+        )
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"AI service error: {exc}",

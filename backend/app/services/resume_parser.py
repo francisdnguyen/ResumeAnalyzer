@@ -122,7 +122,9 @@ def _clean_text(text: str) -> str:
 def _sanitize_filename(filename: str, file_type: str) -> str:
     # Keep alphanumerics, spaces, hyphens, underscores, dots
     name = re.sub(r"[^\w\s\-.]", "", filename).strip()
+    if not name:
+        return f"resume.{file_type}"
     # Enforce correct extension
     if not name.lower().endswith(f".{file_type}"):
         name = f"{name}.{file_type}"
-    return name[:255] or f"resume.{file_type}"
+    return name[:255]

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -11,6 +12,8 @@ from app.models.job import Job
 from app.models.resume import User
 from app.schemas.job import JobAnalysisResponse, JobCreateRequest
 from app.services.ai import analyze_job_description, generate_embedding
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -48,6 +51,9 @@ async def create_job(
             generate_embedding(body.description),
         )
     except Exception as exc:
+        logger.warning(
+            "job analysis failed", extra={"user_id": user_id}, exc_info=exc
+        )
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"AI service error: {exc}",
@@ -65,6 +71,11 @@ async def create_job(
     db.add(job)
     await db.commit()
     await db.refresh(job)
+
+    logger.info(
+        "job analyzed",
+        extra={"user_id": user_id, "job_id": str(job.id), "embedding_ready": embedding is not None},
+    )
 
     return _to_response(job, extracted)
 
