@@ -40,6 +40,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://resume-analyzer-two-eta.vercel.app",
+        "https://resumeanalyzer-8x0k.onrender.com"
     ],
     # Matches all Vercel preview deploy URLs for this project (anchored, case-insensitive)
     allow_origin_regex=r"(?i)^https://resume-analyzer-[a-z0-9-]+\.vercel\.app$",
