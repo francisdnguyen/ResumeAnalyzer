@@ -25,7 +25,7 @@
 
 ## Week 4 — Ship
 - [x] CORS: add Vercel production domain to `allow_origins` in `backend/main.py`
-- [x] Backend deploy to Render — (redeploy pending)
+- [x] Backend deploy to Render — https://resumeanalyzer-8x0k.onrender.com
 - [x] Frontend deploy to Vercel — https://resume-analyzer-two-eta.vercel.app
 - [x] Verify Neon migrations 001 + 002 applied to production DB
 - [x] Rate limiting on AI-heavy endpoints (`/match`, `/bullets`, `/questions`)

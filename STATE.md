@@ -136,7 +136,7 @@ All features shipped. Post-review fixes applied after 6-agent quality pass:
 - [x] Rate limiting on AI endpoints — slowapi 0.1.9; 10/min match+questions, 20/min bullets; keyed by Bearer token
 - [x] Neon production DB verified — pgvector active, all 4 tables + extracted_skills column present
 - [x] CORS updated — Vercel production domain added to `allow_origins`
-- [x] Backend live on Render — (redeploy pending)
+- [x] Backend live on Render — https://resumeanalyzer-8x0k.onrender.com
 - [x] Frontend live on Vercel — https://resume-analyzer-two-eta.vercel.app
 - [x] Resume delete — DELETE /api/v1/resumes/{id}, ownership validated, ResumeList shared across dashboard + upload page
 - [x] Settings dark theme — Clerk UserProfile using variables API for full dark palette
