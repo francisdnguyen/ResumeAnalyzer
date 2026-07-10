@@ -3,7 +3,7 @@ Structured (JSON) logging.
 
 Emits one JSON object per log line — timestamp, level, logger, message, plus any
 `extra=` fields the caller attaches (e.g. request_id, duration_ms, status_code).
-Works out of the box with Railway/any log aggregator that ingests stdout.
+Works out of the box with Render/any log aggregator that ingests stdout.
 """
 
 import contextvars

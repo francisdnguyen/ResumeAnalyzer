@@ -36,7 +36,7 @@ A full-stack SaaS-style AI recruiting assistant where users upload resumes, past
 
 ### Deployment
 - **Frontend:** Vercel
-- **Backend:** Railway or Render
+- **Backend:** Render
 - **Database:** Neon PostgreSQL
 
 ---

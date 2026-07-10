@@ -20,7 +20,7 @@ AI-powered resume and job match platform. Upload a resume, paste a job descripti
                           │  Bearer JWT  (HTTPS)
                           ▼
 ┌──────────────────────────────────────────────────────────┐
-│                 FastAPI  (Railway)                        │
+│                 FastAPI  (Render)                         │
 │                                                          │
 │  POST  /api/v1/resumes/upload   pdfplumber / python-docx │
 │  GET   /api/v1/resumes/                                  │
@@ -85,7 +85,7 @@ Weighted score is combined with pgvector cosine similarity (embedding distance) 
 | Drag-and-drop | @dnd-kit/core |
 | Rate limiting | slowapi (in-memory, per Bearer token) |
 | Frontend deploy | Vercel |
-| Backend deploy | Railway |
+| Backend deploy | Render |
 
 ---
 
@@ -179,21 +179,18 @@ Runs at `http://localhost:3000`.
 
 ## Deployment
 
-### Backend → Railway
+### Backend → Render
 
-1. Create a new Railway project and connect the repo. Set the root directory to `backend/`.
-2. Set the start command to:
-   ```
-   uvicorn main:app --host 0.0.0.0 --port $PORT
-   ```
-3. Add environment variables in Railway:
+1. Create a new Render Web Service and connect the repo.
+2. Set **Root Directory** to `.` and **Dockerfile Path** to `backend/Dockerfile`.
+3. Add environment variables in Render:
    ```
    DATABASE_URL
    CLERK_SECRET_KEY
    CLERK_JWKS_URL
    OPENAI_API_KEY
    ```
-4. Copy the Railway public URL and add it to `allow_origins` in `backend/main.py`.
+4. Copy the Render public URL and add it to `allow_origins` in `backend/main.py`.
 
 ---
 
@@ -204,7 +201,7 @@ Runs at `http://localhost:3000`.
    ```
    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
    CLERK_SECRET_KEY
-   NEXT_PUBLIC_API_URL    ← your Railway backend URL (no trailing slash)
+   NEXT_PUBLIC_API_URL    ← your Render backend URL (no trailing slash)
    ```
 3. Add your Vercel production domain to Clerk's **Allowed origins**.
 4. Deploy. Preview deployments matching `resume-analyzer-*.vercel.app` are covered by `allow_origin_regex` in `backend/main.py` automatically.

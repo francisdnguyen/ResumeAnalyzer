@@ -1,0 +1,38 @@
+# Git
+.git/
+.gitignore
+
+# Frontend
+frontend/
+node_modules/
+
+# Backend — Python artifacts
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+backend/tests/
+backend/.pytest_cache/
+backend/htmlcov/
+backend/.coverage
+backend/pytest.ini
+
+# Environment files
+.env
+.env.local
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docs
+README.md
+*.md
