@@ -1,3 +1,4 @@
+import re
 from urllib.parse import parse_qs, urlsplit, urlunsplit
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,11 +18,7 @@ class Settings(BaseSettings):
     @property
     def async_database_url(self) -> str:
         # Neon and standard URLs both need the asyncpg driver prefix
-        url = self.database_url
-        if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-        elif url.startswith("postgresql://"):
-            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        url = re.sub(r"^postgres(?:ql)?://", "postgresql+asyncpg://", self.database_url)
 
         # asyncpg doesn't accept libpq-style "sslmode" as a connect kwarg —
         # strip it from the query string; SSL is configured separately via connect_args.

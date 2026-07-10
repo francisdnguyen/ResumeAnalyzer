@@ -12,10 +12,21 @@ import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.models.resume import User
 
 bearer_scheme = HTTPBearer()
+
+
+async def ensure_user(db: AsyncSession, user_id: str) -> None:
+    """Upsert a user row — Clerk is the source of truth for identity."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    if result.scalar_one_or_none() is None:
+        db.add(User(id=user_id))
+        await db.flush()
 
 _jwks_cache: dict | None = None
 _jwks_fetched_at: float = 0.0

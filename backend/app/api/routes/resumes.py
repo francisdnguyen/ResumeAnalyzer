@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user_id
+from app.api.deps import ensure_user, get_current_user_id
 from app.core.database import get_db
-from app.models.resume import Resume, User
+from app.models.resume import Resume
 from app.schemas.resume import ResumeListItem, ResumeUploadResponse
 from app.services.ai import generate_embedding
 from app.services.resume_parser import parse_resume
@@ -28,11 +28,7 @@ async def upload_resume(
     # Generate embedding before committing — NULL on failure, upload still succeeds
     embedding = await generate_embedding(raw_text)
 
-    # Upsert the user row — Clerk is the source of truth for identity
-    result = await db.execute(select(User).where(User.id == user_id))
-    if result.scalar_one_or_none() is None:
-        db.add(User(id=user_id))
-        await db.flush()
+    await ensure_user(db, user_id)
 
     resume = Resume(
         user_id=user_id,

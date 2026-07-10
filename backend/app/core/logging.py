@@ -73,9 +73,6 @@ def configure_logging(level: str = "INFO") -> None:
 class RequestContextMiddleware(BaseHTTPMiddleware):
     """Assigns a request ID (echoed as X-Request-ID) and logs one line per request."""
 
-    def __init__(self, app: ASGIApp) -> None:
-        super().__init__(app)
-
     async def dispatch(self, request: Request, call_next) -> Response:
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
         token = request_id_var.set(request_id)

@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 ApplicationStatus = Literal["applied", "oa", "interview", "rejected", "offer"]
 
@@ -27,5 +27,4 @@ class ApplicationResponse(BaseModel):
     job_title: str | None
     job_company: str | None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

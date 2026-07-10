@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -104,9 +103,6 @@ async def update_application(
 
     if body.notes is not None:
         app.notes = body.notes
-
-    # Explicitly stamp updated_at so ORM-level onupdate and DB-level timestamps stay in sync
-    app.updated_at = datetime.now(timezone.utc)
 
     await db.commit()
     await db.refresh(app)

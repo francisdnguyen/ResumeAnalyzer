@@ -6,10 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user_id
+from app.api.deps import ensure_user, get_current_user_id
 from app.core.database import get_db
 from app.models.job import Job
-from app.models.resume import User
 from app.schemas.job import JobAnalysisResponse, JobCreateRequest
 from app.services.ai import analyze_job_description, generate_embedding
 
@@ -38,11 +37,7 @@ async def create_job(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> JobAnalysisResponse:
-    # Ensure user row exists
-    result = await db.execute(select(User).where(User.id == user_id))
-    if result.scalar_one_or_none() is None:
-        db.add(User(id=user_id))
-        await db.flush()
+    await ensure_user(db, user_id)
 
     # Run skill extraction and embedding generation concurrently
     try:

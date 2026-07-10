@@ -18,6 +18,14 @@ logger = logging.getLogger(__name__)
 _client: AsyncOpenAI | None = None
 
 
+def _parse_json(raw: str, caller: str) -> dict:
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        logger.error("%s: invalid JSON from GPT — %s", caller, raw[:200])
+        return {}
+
+
 def _get_client() -> AsyncOpenAI:
     global _client
     if _client is None:
@@ -79,11 +87,7 @@ async def analyze_job_description(description: str) -> dict:
     )
 
     raw = response.choices[0].message.content or "{}"
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        logger.error("analyze_job_description: invalid JSON from GPT — %s", raw[:200])
-        data = {}
+    data = _parse_json(raw, "analyze_job_description")
 
     return {
         "title": data.get("title"),
@@ -159,11 +163,7 @@ async def generate_match_analysis(
     )
 
     raw = response.choices[0].message.content or "{}"
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        logger.error("generate_match_analysis: invalid JSON from GPT — %s", raw[:200])
-        data = {}
+    data = _parse_json(raw, "generate_match_analysis")
 
     breakdown = data.get("breakdown") or {}
 
@@ -230,11 +230,7 @@ async def rewrite_bullet(bullet: str, job_description: str) -> list[str]:
     )
 
     raw = response.choices[0].message.content or "{}"
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        logger.error("rewrite_bullet: invalid JSON from GPT — %s", raw[:200])
-        data = {}
+    data = _parse_json(raw, "rewrite_bullet")
 
     rewrites: list[str] = data.get("rewrites") or []
     return rewrites[:3]
@@ -284,11 +280,7 @@ async def generate_interview_questions(
     )
 
     raw = response.choices[0].message.content or "{}"
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        logger.error("generate_interview_questions: invalid JSON from GPT — %s", raw[:200])
-        data = {}
+    data = _parse_json(raw, "generate_interview_questions")
 
     return {
         "behavioral": data.get("behavioral") or [],

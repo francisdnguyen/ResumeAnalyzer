@@ -3,6 +3,13 @@
 .env.local
 .env.*
 
+# Internal AI agent files
+CLAUDE.md
+AGENTS.md
+AGENT.md
+BRAIN.md
+STATE.md
+
 .DS_Store
 Thumbs.db
 *.log

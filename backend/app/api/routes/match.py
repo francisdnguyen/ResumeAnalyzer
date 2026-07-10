@@ -43,7 +43,7 @@ async def create_match(
     # Cosine similarity — None if either embedding is missing
     sim: float | None = None
     if resume.embedding is not None and job.embedding is not None:
-        sim = cosine_similarity(list(resume.embedding), list(job.embedding))
+        sim = cosine_similarity(resume.embedding, job.embedding)
 
     skills = job.extracted_skills or {}
     required_skills: list[str] = skills.get("required_skills") or []
